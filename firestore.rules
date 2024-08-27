@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function getEmployees(shopId){
+    	return shopId != null
+      	? get(/databases/$(database)/documents/shops/$(shopId)).data.employeeIds
+      	: [];
+    }
+
+    function getUser(uid){
+    	return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function getShopIdOfEmployee(uid){
+    	return getUser(uid).shopId
+    }
+    
+    function isEmployeeValid(uid){
+    	return uid in getEmployees(getUser(uid).shopId);
+    }
+    
+    function getAdmins(){
+    	return get(/databases/$(database)/documents/service/admins).data.adminUserIds;
+    }
+    
+    function isAdmin(uid){
+    	return uid in getAdmins();
+    }
+
+    match /shops/{id} {
+      allow get, update: if request.auth.uid == resource.data.ownerId;
+      allow read, write: if isAdmin(request.auth.uid);
+    }
+    
+    match /logs/{id} {
+      allow read, write: if isAdmin(request.auth.uid);
+    }
+
+    match /transactions/{id} {
+    	// user can read their own transactions and a valid employee can also read a users transactions
+      allow read: if resource.data.userId == request.auth.uid || isEmployeeValid(request.auth.uid)
+
+      allow create: if request.auth.uid in getEmployees(getUser(request.auth.uid).shopId);
+    }
+
+    match /users/{id} {
+      allow get: if resource != null && (resource.id == request.auth.uid || request.auth.uid in getEmployees(getUser(request.auth.uid).shopId));
+			allow read: if isAdmin(request.auth.uid);
+      allow create: if request.auth.uid == request.resource.id;
+      allow delete: if resource.id == request.auth.uid;
+      allow update: if request.auth.uid in getEmployees(getShopIdOfEmployee(request.auth.uid));
+    }
+  }
+}
