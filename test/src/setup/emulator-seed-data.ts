@@ -19,9 +19,14 @@ export const firebaseAuthSeed: MyFirebaseUserAuth[] = [
         email: "sylphie.olerson.unravel@shopowner.com",
         uid: "shopOwnerUser1"
     },
+    {
+        email: "darawa.untapped@user.com",
+        uid: "defaultUser2"
+    },
 ];
 
 export const defaultUser = firebaseAuthSeed[0];
+export const defaultUser2 = firebaseAuthSeed[4];
 export const adminUser = firebaseAuthSeed[1];
 export const employeeUser = firebaseAuthSeed[2];
 export const shopOwnerUser = firebaseAuthSeed[3];
@@ -49,6 +54,7 @@ export const firestoreSeed: MyFirestore = {
             "value": 0,
             "shopId": "shop1",
             "shopName": "Nights third leg syndrom",
+            "isEmployee": true,
         },
         "shopOwnerUser1": {
             "birth": 946684800000,
@@ -57,8 +63,9 @@ export const firestoreSeed: MyFirestore = {
             "value": 750,
             "shopId": "shop1",
             "shopName": "Nights third leg syndrom",
-            "ownerOfShop": true,
-        }
+            "isOwnerOfShop": true,
+            "isEmployee": true,
+        },
     },
     transactions: {
         "transaction1": {

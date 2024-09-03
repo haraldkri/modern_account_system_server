@@ -14,8 +14,13 @@ function getFirestoreRules() {
   );
 }
 
+interface SetupFirestoreDb {
+  insertDefaultData?: boolean
+}
 
-export async function setupFirestoreDB(): Promise<RulesTestEnvironment> {
+export async function setupFirestoreDB(props?: SetupFirestoreDb): Promise<RulesTestEnvironment> {
+  const {insertDefaultData} = props ?? {};
+
   // Load the content of the "firestore.rules" file into the emulator before running the test suite.
   const rulesTestEnvironment = await initializeTestEnvironment({
     projectId: TEST_FIREBASE_PROJECT_ID,
@@ -28,23 +33,25 @@ export async function setupFirestoreDB(): Promise<RulesTestEnvironment> {
     },
   });
 
-  await rulesTestEnvironment.withSecurityRulesDisabled(async (context) => {
-    const firestoreDb = context.firestore();
+  if (insertDefaultData) {
+    await rulesTestEnvironment.withSecurityRulesDisabled(async (context) => {
+      const firestoreDb = context.firestore();
 
-    // Seed Firestore with mock data
-    const promises = [];
-    for (const collectionKey in firestoreSeed) {
-      const collectionRef = firestoreDb.collection(collectionKey);
-      const documents = firestoreSeed[collectionKey as keyof MyFirestore];
+      // Seed Firestore with mock data
+      const promises = [];
+      for (const collectionKey in firestoreSeed) {
+        const collectionRef = firestoreDb.collection(collectionKey);
+        const documents = firestoreSeed[collectionKey as keyof MyFirestore];
 
-      for (const [userId, userDocument] of Object.entries(documents)) {
-        const docRef = collectionRef.doc(userId);
-        promises.push(docRef.set(userDocument));
+        for (const [userId, userDocument] of Object.entries(documents)) {
+          const docRef = collectionRef.doc(userId);
+          promises.push(docRef.set(userDocument));
+        }
       }
-    }
 
-    await Promise.all(promises);
-  });
+      await Promise.all(promises);
+    });
+  }
 
   return rulesTestEnvironment;
 }

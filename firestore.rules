@@ -8,48 +8,115 @@ service cloud.firestore {
       	: [];
     }
 
-    function getUser(uid){
-    	return get(/databases/$(database)/documents/users/$(uid)).data;
+    function getUser(){
+    	return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isEmployee(){
+      return getUser().isEmployee;
+    }
+    
+    function isAdmin(){
+      return getUser().isAdmin;
     }
 
-    function getShopIdOfEmployee(uid){
-    	return getUser(uid).shopId
+    function isOwnerOfShop(){
+      return getUser().isShopOwner;
     }
-    
-    function isEmployeeValid(uid){
-    	return uid in getEmployees(getUser(uid).shopId);
+
+    // Function to check if a string is alphanumeric, allowing characters from various languages and spaces as well as commas, dots, hyphens
+    function isSafeAlphanumeric(value) {
+      return value is string && value.matches('^[\\p{L}\\p{N}\\s.,-]+$');
     }
-    
-    function getAdmins(){
-    	return get(/databases/$(database)/documents/service/admins).data.adminUserIds;
+
+    function isSetAlready(key){
+      return resource != null && key in resource.data.keys;
     }
-    
-    function isAdmin(uid){
-    	return uid in getAdmins();
+
+    // for attributes that can not be overridden once set
+    function canBeSet(key){
+      return !isSetAlready(key);
     }
+
+    // function goingToBeSet(key){
+    //   return key in request.resource.data.keys();
+    // }
 
     match /shops/{id} {
-      allow get, update: if request.auth.uid == resource.data.ownerId;
-      allow read, write: if isAdmin(request.auth.uid);
+      function isShopOwner(){
+        return request.auth.uid == resource.data.ownerId;
+      }
+
+      allow get, update: if isShopOwner();
+      allow read, write: if isAdmin();
     }
     
     match /logs/{id} {
-      allow read, write: if isAdmin(request.auth.uid);
+      allow read, write: if isAdmin();
     }
 
     match /transactions/{id} {
     	// user can read their own transactions and a valid employee can also read a users transactions
-      allow read: if resource.data.userId == request.auth.uid || isEmployeeValid(request.auth.uid)
+      allow read: if resource.data.userId == request.auth.uid || isEmployee()
 
-      allow create: if request.auth.uid in getEmployees(getUser(request.auth.uid).shopId);
+      allow create: if request.auth.uid in getEmployees(getUser().shopId);
     }
 
     match /users/{id} {
-      allow get: if resource != null && (resource.id == request.auth.uid || request.auth.uid in getEmployees(getUser(request.auth.uid).shopId));
-			allow read: if isAdmin(request.auth.uid);
-      allow create: if request.auth.uid == request.resource.id;
-      allow delete: if resource.id == request.auth.uid;
-      allow update: if request.auth.uid in getEmployees(getShopIdOfEmployee(request.auth.uid));
+      function isDocumentOwner(){
+        return resource.id == request.auth.uid || request.resource.id == request.auth.uid;
+      }
+
+      function canUserBeCreated(){
+        return request.auth != null && !exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      }
+
+      function validateFields() {
+        let user = getUser();
+        let isDocumentOwner = isDocumentOwner();
+        
+        let data = request.resource.data;
+        let keys = data.keys();
+
+        // Return true if all validations pass
+        return (
+          (!keys.hasAny(['birth']) || (isDocumentOwner && canBeSet('birth') && data.birth is int)) &&
+          (!keys.hasAny(['joined']) || (isDocumentOwner && canBeSet('joined') && data.joined is int)) &&
+          (!keys.hasAny(['name']) || (isDocumentOwner && canBeSet('name') && isSafeAlphanumeric(data.name))) &&
+          (!keys.hasAny(['value']) || 
+            (isDocumentOwner && canBeSet('value') && data.value == 0) ||
+            (user.isEmployee && data.value >= 0)) &&
+          (!keys.hasAny(['shopId']) || 
+            ((user.isShopOwner || user.isAdmin) && isSafeAlphanumeric(data.shopId))) &&
+          (!keys.hasAny(['shopName']) || 
+            ((user.isShopOwner || user.isAdmin) && isSafeAlphanumeric(data.shopName))) &&
+          (!keys.hasAny(['isEmployee']) || 
+            ((user.isShopOwner || user.isAdmin) && data.isEmployee is bool)) &&
+          (!keys.hasAny(['isShopOwner']) || (user.isAdmin && data.isShopOwner is bool)) &&
+          (!keys.hasAny(['isAdmin']) || (user.isAdmin && data.isAdmin is bool))
+        );
+      }
+
+
+
+      // function validateFields(data) {
+      //     return (
+      //        && 
+      //       (!('joined' in data.keys()) || canBeSet('joined') && data.joined is int) && 
+      //       (!('name' in data.keys()) || canBeSet('name') && isAlphanumeric(data.name)) && 
+      //       (!('value' in data.keys()) || data.value is number) && 
+      //       (!('shopId' in data.keys()) || isAlphanumeric(data.shopId) || data.shopId is null) && 
+      //       (!('shopName' in data.keys()) || data.shopName is string) || data.shopName is null && 
+      //       (!('ownerOfShop' in data.keys()) || data.ownerOfShop is string || data.ownerOfShop is null) &&
+      //       (!('isAdmin' in data.keys()) || data.isAdmin is string || data.isAdmin is null)
+      //     );
+      //   }
+
+      allow get: if resource != null && (isDocumentOwner() || isEmployee())
+			allow read: if isAdmin();
+      allow create: if canUserBeCreated() && isDocumentOwner() && validateFields();
+      allow delete: if isDocumentOwner();
+      allow update: if resource != null && (isDocumentOwner() || isEmployee()) && validateFields();
     }
   }
 }

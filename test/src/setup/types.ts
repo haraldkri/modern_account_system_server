@@ -14,10 +14,12 @@ export interface User {
   shopId?: string | null;
   // The shopName of the shop the user is associated with. Associations are created when the user is an employee or shopOwner of a shop.
   shopName?: string | null;
-  // The attribute representing ownership of a shop. Safety checks are not reliant on this field btw
-  ownerOfShop?: boolean | null;
-  // The attribute representing the admin status. Safety checks are not reliant on this field btw
+  // The attribute representing ownership of a shop.
+  isOwnerOfShop?: boolean | null;
+  // The attribute representing the admin status.
   isAdmin?: boolean | null;
+  // The attribute representing the employee status.
+  isEmployee?: boolean | null;
 }
 
 export interface UsersCollection {
