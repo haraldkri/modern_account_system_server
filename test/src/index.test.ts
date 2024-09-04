@@ -2,7 +2,7 @@ import {setupFirestoreDB} from './setup/setupFirestoreDb';
 import {defaultUser, defaultUser2, employeeUser, firestoreSeed} from './setup/emulator-seed-data';
 import {assertFails, assertSucceeds, RulesTestEnvironment} from '@firebase/rules-unit-testing';
 import {testForInvalidTypes, testForValidTypes} from './setup/util';
-import {afterEach} from 'mocha';
+import {afterEach, beforeEach, describe, it} from "vitest";
 
 describe('firestore rules testing', () => {
   describe('users - get', () => {
