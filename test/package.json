@@ -9,8 +9,11 @@
     "test:watch": "ts-mocha --exit src/**/*.test.ts -w --watch-files 'src/**/*.ts'",
     "emulators:start": "firebase emulators:start --only firestore"
   },
+  "engines": {
+    "node": "18.20.4 || 20.17.0 || >=22.8"
+  },
   "author": "Harald Kriebisch",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@firebase/rules-unit-testing": "^3.0.4",
     "ts-node": "^10.9.2",
