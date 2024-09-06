@@ -30,7 +30,7 @@ service cloud.firestore {
     }
 
     function isSetAlready(key){
-      return resource != null && key in resource.data.keys;
+      return resource != null && resource.data.keys() != null && key in resource.data.keys();
     }
 
     // for attributes that can not be overridden once set
@@ -64,7 +64,7 @@ service cloud.firestore {
 
     match /users/{id} {
       function isDocumentOwner(){
-        return resource.id == request.auth.uid || request.resource.id == request.auth.uid;
+        return id == request.auth.uid || request.resource.id == request.auth.uid;
       }
 
       function canUserBeCreated(){
@@ -72,45 +72,30 @@ service cloud.firestore {
       }
 
       function validateFields() {
-        let user = getUser();
-        let isDocumentOwner = isDocumentOwner();
-        
-        let data = request.resource.data;
-        let keys = data.keys();
+          let user = getUser();
+          let isDocumentOwner = isDocumentOwner();
+           
+          let data = request.resource.data;
+          let keys = request.resource.data.keys();
 
-        // Return true if all validations pass
-        return (
-          (!keys.hasAny(['birth']) || (isDocumentOwner && canBeSet('birth') && data.birth is int)) &&
-          (!keys.hasAny(['joined']) || (isDocumentOwner && canBeSet('joined') && data.joined is int)) &&
-          (!keys.hasAny(['name']) || (isDocumentOwner && canBeSet('name') && isSafeAlphanumeric(data.name))) &&
-          (!keys.hasAny(['value']) || 
-            (isDocumentOwner && canBeSet('value') && data.value == 0) ||
-            (user.isEmployee && data.value >= 0)) &&
-          (!keys.hasAny(['shopId']) || 
-            ((user.isShopOwner || user.isAdmin) && isSafeAlphanumeric(data.shopId))) &&
-          (!keys.hasAny(['shopName']) || 
-            ((user.isShopOwner || user.isAdmin) && isSafeAlphanumeric(data.shopName))) &&
-          (!keys.hasAny(['isEmployee']) || 
-            ((user.isShopOwner || user.isAdmin) && data.isEmployee is bool)) &&
-          (!keys.hasAny(['isShopOwner']) || (user.isAdmin && data.isShopOwner is bool)) &&
-          (!keys.hasAny(['isAdmin']) || (user.isAdmin && data.isAdmin is bool))
-        );
+          // Return true if all validations pass
+          return (
+              (!('birth' in keys) || (isDocumentOwner && canBeSet('birth') && data.birth is int)) &&
+              (!('joined' in keys)|| (isDocumentOwner && canBeSet('joined') && data.joined is int)) &&
+              (!('name' in keys) || (isDocumentOwner && canBeSet('name') && isSafeAlphanumeric(data.name))) &&
+              (!('value' in keys) || 
+                  ((isDocumentOwner && canBeSet('value') && data.value is int && data.value == 0) ||
+                  (user.isEmployee && data.value is int && data.value >= 0))) &&
+              (!('shopId' in keys) || 
+                  ((user.isShopOwner || user.isAdmin) && isSafeAlphanumeric(data.shopId))) &&
+              (!('shopName' in keys) || 
+                  ((user.isShopOwner || user.isAdmin) && isSafeAlphanumeric(data.shopName))) &&
+              (!('isEmployee' in keys) || 
+                  ((user.isShopOwner || user.isAdmin) && data.isEmployee is bool)) &&
+              (!('isShopOwner' in keys) || (user.isAdmin && data.isShopOwner is bool)) &&
+              (!('isAdmin' in keys) || (user.isAdmin && data.isAdmin is bool))
+          );
       }
-
-
-
-      // function validateFields(data) {
-      //     return (
-      //        && 
-      //       (!('joined' in data.keys()) || canBeSet('joined') && data.joined is int) && 
-      //       (!('name' in data.keys()) || canBeSet('name') && isAlphanumeric(data.name)) && 
-      //       (!('value' in data.keys()) || data.value is number) && 
-      //       (!('shopId' in data.keys()) || isAlphanumeric(data.shopId) || data.shopId is null) && 
-      //       (!('shopName' in data.keys()) || data.shopName is string) || data.shopName is null && 
-      //       (!('ownerOfShop' in data.keys()) || data.ownerOfShop is string || data.ownerOfShop is null) &&
-      //       (!('isAdmin' in data.keys()) || data.isAdmin is string || data.isAdmin is null)
-      //     );
-      //   }
 
       allow get: if resource != null && (isDocumentOwner() || isEmployee())
 			allow read: if isAdmin();

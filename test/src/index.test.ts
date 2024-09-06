@@ -121,18 +121,14 @@ describe('firestore rules testing', () => {
       const firestoreDb = user.firestore();
 
       //make sure empty user exists
-      await firestoreDb.collection('users').doc(userUid).set({},{merge: false});
+      await firestoreDb.collection('users').doc(userUid).set({});
 
       const exampleData = {'birth': firestoreSeed.users["defaultUser1"].birth};
-      console.log(exampleData)
 
       await testForInvalidTypes(firestoreDb.collection('users').doc(userUid), 'birth', 'integer');
       await assertSucceeds(firestoreDb.collection('users').doc(userUid).set(exampleData));
       // cannot be set again once set
       await assertFails(firestoreDb.collection('users').doc(userUid).set(exampleData));
-
-
-
     });
 
     // it('user - user', async () => {
