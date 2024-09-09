@@ -63,7 +63,7 @@ export const firestoreSeed: MyFirestore = {
             "value": 750,
             "shopId": "shop1",
             "shopName": "Nights third leg syndrom",
-            "isOwnerOfShop": true,
+            "isShopOwner": true,
             "isEmployee": true,
         },
     },

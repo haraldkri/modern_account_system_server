@@ -15,7 +15,7 @@ export interface User {
   // The shopName of the shop the user is associated with. Associations are created when the user is an employee or shopOwner of a shop.
   shopName?: string | null;
   // The attribute representing ownership of a shop.
-  isOwnerOfShop?: boolean | null;
+  isShopOwner?: boolean | null;
   // The attribute representing the admin status.
   isAdmin?: boolean | null;
   // The attribute representing the employee status.

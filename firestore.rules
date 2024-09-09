@@ -79,29 +79,41 @@ service cloud.firestore {
           let keys = request.resource.data.keys();
 
           // Return true if all validations pass
+          // Always check if the field is going to be changed and only if that is the case do the validations
           return (
-              (!('birth' in keys) || (isDocumentOwner && canBeSet('birth') && data.birth is int)) &&
-              (!('joined' in keys)|| (isDocumentOwner && canBeSet('joined') && data.joined is int)) &&
-              (!('name' in keys) || (isDocumentOwner && canBeSet('name') && isSafeAlphanumeric(data.name))) &&
+              (!('birth' in keys) || 
+                  (isDocumentOwner && canBeSet('birth') && data.birth is int)) &&
+              (!('joined' in keys) || 
+                  (isDocumentOwner && canBeSet('joined') && data.joined is int)) &&
+              (!('name' in keys) || 
+                  (isDocumentOwner && canBeSet('name') && isSafeAlphanumeric(data.name))) &&
               (!('value' in keys) || 
                   ((isDocumentOwner && canBeSet('value') && data.value is int && data.value == 0) ||
                   (user.isEmployee && data.value is int && data.value >= 0))) &&
               (!('shopId' in keys) || 
-                  ((user.isShopOwner || user.isAdmin) && isSafeAlphanumeric(data.shopId))) &&
+                  ((
+                    (user.isShopOwner && data.shopId == user.shopId) || 
+                    (user.isAdmin && isSafeAlphanumeric(data.shopId))
+                  ))) &&
               (!('shopName' in keys) || 
-                  ((user.isShopOwner || user.isAdmin) && isSafeAlphanumeric(data.shopName))) &&
+                  ((
+                    (user.isShopOwner && data.shopName == user.shopName) || 
+                    (user.isAdmin && isSafeAlphanumeric(data.shopName))
+                  ))) &&
               (!('isEmployee' in keys) || 
                   ((user.isShopOwner || user.isAdmin) && data.isEmployee is bool)) &&
-              (!('isShopOwner' in keys) || (user.isAdmin && data.isShopOwner is bool)) &&
-              (!('isAdmin' in keys) || (user.isAdmin && data.isAdmin is bool))
+              (!('isShopOwner' in keys) || 
+                  (user.isAdmin && data.isShopOwner is bool)) &&
+              (!('isAdmin' in keys) || 
+                  (user.isAdmin && data.isAdmin is bool))
           );
       }
 
       allow get: if resource != null && (isDocumentOwner() || isEmployee())
 			allow read: if isAdmin();
       allow create: if canUserBeCreated() && isDocumentOwner() && validateFields();
-      allow delete: if isDocumentOwner();
-      allow update: if resource != null && (isDocumentOwner() || isEmployee()) && validateFields();
+      allow delete: if isDocumentOwner() || isAdmin();
+      allow update: if resource != null && (isDocumentOwner() || isEmployee() || isAdmin()) && validateFields();
     }
   }
 }
