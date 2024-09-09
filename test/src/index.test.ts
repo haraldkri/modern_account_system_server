@@ -9,7 +9,7 @@ import {
 } from './setup/emulator-seed-data';
 import {assertFails, assertSucceeds, RulesTestEnvironment} from '@firebase/rules-unit-testing';
 import {testForInvalidTypes, testForValidTypes} from './setup/util';
-import {afterEach, beforeEach, describe, it} from "vitest";
+import {afterEach, beforeEach, describe, test} from "vitest";
 
 describe('firestore rules testing', () => {
     describe('users - get', () => {
@@ -23,22 +23,22 @@ describe('firestore rules testing', () => {
             await testEnvironment.cleanup();
         });
 
-        it('getUser - authenticated user - correct uid', async () => {
+        test('getUser - authenticated user - correct uid', async () => {
             const firestore = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
             await assertSucceeds(firestore.collection('users').doc(defaultUser.uid).get());
         });
 
-        it('getUser - unauthenticated user - no uid', async () => {
+        test('getUser - unauthenticated user - no uid', async () => {
             const firestore = testEnvironment.unauthenticatedContext().firestore();
             await assertFails(firestore.collection('users').doc(defaultUser.uid).get());
         });
 
-        it('getUser - authenticated user - wrong uid', async () => {
+        test('getUser - authenticated user - wrong uid', async () => {
             const firestore = testEnvironment.authenticatedContext(defaultUser2.uid).firestore();
             await assertFails(firestore.collection('users').doc(defaultUser.uid).get());
         });
 
-        it('getUser - authenticated user - wrong uid - employee', async () => {
+        test('getUser - authenticated user - wrong uid - employee', async () => {
             const firestore = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
             await assertSucceeds(firestore.collection('users').doc(defaultUser.uid).get());
         });
@@ -55,7 +55,7 @@ describe('firestore rules testing', () => {
             await testEnvironment.cleanup();
         });
 
-        it('isDocumentOwner', async () => {
+        test('isDocumentOwner', async () => {
             const userUid = '123';
             const user2Uid = '234';
 
@@ -69,7 +69,7 @@ describe('firestore rules testing', () => {
             await firestoreDb.collection('users').doc(userUid).delete();
         });
 
-        it('not restricted fields - birth, joined, name, value', async () => {
+        test('not restricted fields - birth, joined, name, value', async () => {
             const userUid = '123';
             const user = testEnvironment.authenticatedContext(userUid);
             const firestoreDb = user.firestore();
@@ -92,7 +92,7 @@ describe('firestore rules testing', () => {
             await testForInvalidTypes(firestoreDb.collection('users').doc(userUid), 'value', 'integer');
         });
 
-        it('restricted fields - shopId, shopName, isEmployee, isShopOwner, isAdmin', async () => {
+        test('restricted fields - shopId, shopName, isEmployee, isShopOwner, isAdmin', async () => {
             const userUid = '123';
             const user = testEnvironment.authenticatedContext(userUid);
             const firestoreDb = user.firestore();
@@ -122,7 +122,7 @@ describe('firestore rules testing', () => {
             await testEnvironment.cleanup();
         });
 
-        it('field - birth', async () => {
+        test('field - birth', async () => {
             const userUid = "123";
             const user = testEnvironment.authenticatedContext(userUid);
             const firestoreDb = user.firestore();
@@ -138,7 +138,7 @@ describe('firestore rules testing', () => {
             await assertFails(firestoreDb.collection('users').doc(userUid).set(exampleData));
         });
 
-        it('field - joined', async () => {
+        test('field - joined', async () => {
             const userUid = "123";
             const user = testEnvironment.authenticatedContext(userUid);
             const firestoreDb = user.firestore();
@@ -154,7 +154,7 @@ describe('firestore rules testing', () => {
             await assertFails(firestoreDb.collection('users').doc(userUid).set(exampleData));
         });
 
-        it('field - name', async () => {
+        test('field - name', async () => {
             const userUid = "123";
             const user = testEnvironment.authenticatedContext(userUid);
             const firestoreDb = user.firestore();
@@ -170,7 +170,7 @@ describe('firestore rules testing', () => {
             await assertFails(firestoreDb.collection('users').doc(userUid).set(exampleData));
         });
 
-        it('field - value', async () => {
+        test('field - value', async () => {
             const userUid = "123";
             const user = testEnvironment.authenticatedContext(userUid);
             const firestoreDb = user.firestore();
@@ -202,7 +202,7 @@ describe('firestore rules testing', () => {
             await assertSucceeds(employeeFirestoreDb.collection('users').doc(userUid).set({'value': 100}));
         });
 
-        it('field - shopId', async () => {
+        test('field - shopId', async () => {
             const userUid = defaultUser.uid;
             /**
              * For shopOwners and admins
@@ -225,7 +225,7 @@ describe('firestore rules testing', () => {
             await testForInvalidTypes(adminFirestoreDb.collection("users").doc(userUid), 'shopId', 'string');
         });
 
-        it('field - shopName', async () => {
+        test('field - shopName', async () => {
             const userUid = defaultUser.uid;
             /**
              * For shopOwners and admins
@@ -248,7 +248,7 @@ describe('firestore rules testing', () => {
             await testForInvalidTypes(adminFirestoreDb.collection("users").doc(userUid), 'shopName', 'string');
         });
 
-        it('field - isEmployee', async () => {
+        test('field - isEmployee', async () => {
             const userUid = defaultUser.uid;
             /**
              * For shopOwners and admins
@@ -268,7 +268,7 @@ describe('firestore rules testing', () => {
             await testForInvalidTypes(adminFirestoreDb.collection("users").doc(userUid), 'isEmployee', 'boolean');
         });
 
-        it('field - isShopOwner', async () => {
+        test('field - isShopOwner', async () => {
             const userUid = defaultUser.uid;
 
             const adminUid = adminUser.uid;
@@ -279,7 +279,7 @@ describe('firestore rules testing', () => {
             await testForInvalidTypes(adminFirestoreDb.collection("users").doc(userUid), 'isShopOwner', 'boolean');
         });
 
-        it('field - isAdmin', async () => {
+        test('field - isAdmin', async () => {
             const userUid = defaultUser.uid;
 
             const adminUid = adminUser.uid;
@@ -289,40 +289,6 @@ describe('firestore rules testing', () => {
             await assertSucceeds(adminFirestoreDb.collection('users').doc(userUid).set({'isAdmin': true}));
             await testForInvalidTypes(adminFirestoreDb.collection("users").doc(userUid), 'isAdmin', 'boolean');
         });
-
-        // it('user - user', async () => {
-        //   const userUid = "123";
-        //   const user = testEnvironment.authenticatedContext(userUid);
-        //   const firestoreDb = user.firestore();
-        //
-        //   //make sure empty user exists
-        //   await firestoreDb.collection('users').doc(userUid).set({},{merge: false});
-        //
-        //   //birth
-        //   await testForInvalidTypes(firestoreDb.collection('users').doc(userUid), 'birth', 'integer');
-        //   await assertSucceeds(firestoreDb.collection('users').doc(userUid).set({'birth': firestoreSeed.users[0].birth}));
-        //   // cannot be set again once set
-        //   await assertFails(firestoreDb.collection('users').doc(userUid).set({'birth': firestoreSeed.users[0].birth}));
-        //
-        //   //joined
-        //   await testForInvalidTypes(firestoreDb.collection('users').doc(userUid), 'joined', 'integer');
-        //   await assertSucceeds(firestoreDb.collection('users').doc(userUid).set({'joined': firestoreSeed.users[0].joined}));
-        //   // cannot be set again once set
-        //   await assertFails(firestoreDb.collection('users').doc(userUid).set({'joined': firestoreSeed.users[0].joined}));
-        //
-        //   //name
-        //   await testForInvalidTypes(firestoreDb.collection('users').doc(userUid), 'name', 'string');
-        //   await assertSucceeds(firestoreDb.collection('users').doc(userUid).set({'name': firestoreSeed.users[0].name}));
-        //   // cannot be set again once set
-        //   await assertFails(firestoreDb.collection('users').doc(userUid).set({'name': firestoreSeed.users[0].name}));
-        //
-        //   //value
-        //   await testForInvalidTypes(firestoreDb.collection('users').doc(userUid), 'value', 'integer');
-        //   await assertSucceeds(firestoreDb.collection('users').doc(userUid).set({'name': firestoreSeed.users[0].name}));
-        //
-        //
-        //
-        // });
     });
 
     describe('users - list', () => {
@@ -336,7 +302,7 @@ describe('firestore rules testing', () => {
             await testEnvironment.cleanup();
         });
 
-        it('get multiple users from the db at once', async () => {
+        test('get multiple users from the db at once', async () => {
             /**
              * Currently restricted to admins only, as there is no need for anyone else to be able to do so
              */
@@ -365,7 +331,7 @@ describe('firestore rules testing', () => {
             await testEnvironment.cleanup();
         });
 
-        it('only a user itself or an admin can delete their account', async () => {
+        test('only a user itself or an admin can delete their account', async () => {
             function createUser(){
                 firestoreUser.collection('users').doc(defaultUser.uid).set({});
             }
@@ -401,7 +367,7 @@ describe('firestore rules testing', () => {
             await testEnvironment.cleanup();
         });
 
-        it('action - get', async () => {
+        test('action - get', async () => {
             // the user that was part of the transaction
             const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
             await assertSucceeds(firestoreUser.collection('transactions').doc("transaction1").get());
@@ -417,7 +383,7 @@ describe('firestore rules testing', () => {
             await assertSucceeds(firestoreAdmin.collection('transactions').doc("transaction1").get());
         });
 
-        it('action - list', async () => {
+        test('action - list', async () => {
             // users can read the transaction they where part of
             const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
             await assertSucceeds(firestoreUser.collection('transactions').where("userId", "==", defaultUser.uid).get());
@@ -440,7 +406,7 @@ describe('firestore rules testing', () => {
             await assertSucceeds(firestoreAdmin.collection('transactions').get());
         });
 
-        it('action - create', async () => {
+        test('action - create', async () => {
             /**
              * Only employee can create new transactions
              */
@@ -532,7 +498,7 @@ describe('firestore rules testing', () => {
             await testEnvironment.cleanup();
         });
 
-        it('action - read', async () => {
+        test('action - read', async () => {
             // the user that was part of the transaction
             const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
             await assertFails(firestoreUser.collection('logs').get());
@@ -552,7 +518,7 @@ describe('firestore rules testing', () => {
             await assertSucceeds(firestoreAdmin.collection('logs').doc("log1").get());
         });
 
-        it('action - create', async () => {
+        test('action - create', async () => {
             /**
              * Only employee can create new transactions
              */
