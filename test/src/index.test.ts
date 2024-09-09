@@ -390,6 +390,267 @@ describe('firestore rules testing', () => {
         });
     });
 
+    describe('transactions', () => {
+        let testEnvironment: RulesTestEnvironment;
+
+        beforeEach(async () => {
+            testEnvironment = await setupFirestoreDB({insertDefaultData: true});
+        });
+
+        afterEach(async () => {
+            await testEnvironment.cleanup();
+        });
+
+        it('action - get', async () => {
+            // the user that was part of the transaction
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertSucceeds(firestoreUser.collection('transactions').doc("transaction1").get());
+
+            // another user that was not part of the transaction
+            const firestoreUser2 = testEnvironment.authenticatedContext(defaultUser2.uid).firestore();
+            await assertFails(firestoreUser2.collection('transactions').doc("transaction1").get());
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertSucceeds(firestoreEmployee.collection('transactions').doc("transaction1").get());
+
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertSucceeds(firestoreAdmin.collection('transactions').doc("transaction1").get());
+        });
+
+        it('action - list', async () => {
+            // users can read the transaction they where part of
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertSucceeds(firestoreUser.collection('transactions').where("userId", "==", defaultUser.uid).get());
+            await assertFails(firestoreUser.collection('transactions').where("userId", "!=", defaultUser.uid).get());
+
+
+            // employees can read the transaction they where part of
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertSucceeds(firestoreEmployee.collection('transactions').where("employeeId", "==", employeeUser.uid).get());
+            await assertFails(firestoreEmployee.collection('transactions').where("employeeId", "!=", employeeUser.uid).get());
+
+
+            // shopOwners can read the transaction their shop was part of
+            const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
+            await assertSucceeds(firestoreShopOwner.collection('transactions').where("shopId", "==", firestoreSeed.users[shopOwnerUser.uid].shopId).get());
+            await assertFails(firestoreShopOwner.collection('transactions').where("shopId", "!=", firestoreSeed.users[shopOwnerUser.uid].shopId).get());
+
+            // admins can read all to be able to do service
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertSucceeds(firestoreAdmin.collection('transactions').get());
+        });
+
+        it('action - create', async () => {
+            /**
+             * Only employee can create new transactions
+             */
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertFails(firestoreUser.collection('transactions').doc("new transaction 123").set(firestoreSeed.transactions["transaction1"]));
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertSucceeds(firestoreEmployee.collection('transactions').doc("123transaction456").set({
+                "shopId": "shop1",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                "employeeId": employeeUser.uid,
+                "userId": "defaultUser1",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                // wrong shopId
+                "shopId": "shop2",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                "employeeId": "employeeUser1",
+                "userId": "defaultUser1",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                "shopId": "shop1",
+                // wrong shopName
+                "shopName": "undefined shop",
+                "timestamp": 1625011200000,
+                "employeeId": "employeeUser1",
+                "userId": "defaultUser1",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                "shopId": "shop1",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                // wrong employee id
+                "employeeId": "employeeUser2",
+                "userId": "defaultUser1",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                "shopId": "shop1",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                "employeeId": "employeeUser1",
+                // not a save userid string
+                "userId": "<script></script>",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                "shopId": "shop1",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                "employeeId": "employeeUser1",
+                "userId": "defaultUser1",
+                // values don't add up
+                "valueIncrement": 11,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+        });
+    });
+
+    describe('log', () => {
+        let testEnvironment: RulesTestEnvironment;
+
+        beforeEach(async () => {
+            testEnvironment = await setupFirestoreDB({insertDefaultData: true});
+        });
+
+        afterEach(async () => {
+            await testEnvironment.cleanup();
+        });
+
+        it('action - get', async () => {
+            // the user that was part of the transaction
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertSucceeds(firestoreUser.collection('transactions').doc("transaction1").get());
+
+            // another user that was not part of the transaction
+            const firestoreUser2 = testEnvironment.authenticatedContext(defaultUser2.uid).firestore();
+            await assertFails(firestoreUser2.collection('transactions').doc("transaction1").get());
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertSucceeds(firestoreEmployee.collection('transactions').doc("transaction1").get());
+
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertSucceeds(firestoreAdmin.collection('transactions').doc("transaction1").get());
+        });
+
+        it('action - list', async () => {
+            // users can read the transaction they where part of
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertSucceeds(firestoreUser.collection('transactions').where("userId", "==", defaultUser.uid).get());
+            await assertFails(firestoreUser.collection('transactions').where("userId", "!=", defaultUser.uid).get());
+
+
+            // employees can read the transaction they where part of
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertSucceeds(firestoreEmployee.collection('transactions').where("employeeId", "==", employeeUser.uid).get());
+            await assertFails(firestoreEmployee.collection('transactions').where("employeeId", "!=", employeeUser.uid).get());
+
+
+            // shopOwners can read the transaction their shop was part of
+            const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
+            await assertSucceeds(firestoreShopOwner.collection('transactions').where("shopId", "==", firestoreSeed.users[shopOwnerUser.uid].shopId).get());
+            await assertFails(firestoreShopOwner.collection('transactions').where("shopId", "!=", firestoreSeed.users[shopOwnerUser.uid].shopId).get());
+
+            // admins can read all to be able to do service
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertSucceeds(firestoreAdmin.collection('transactions').get());
+        });
+
+        it('action - create', async () => {
+            /**
+             * Only employee can create new transactions
+             */
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertFails(firestoreUser.collection('transactions').doc("new transaction 123").set(firestoreSeed.transactions["transaction1"]));
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertSucceeds(firestoreEmployee.collection('transactions').doc("123transaction456").set({
+                "shopId": "shop1",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                "employeeId": employeeUser.uid,
+                "userId": "defaultUser1",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                // wrong shopId
+                "shopId": "shop2",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                "employeeId": "employeeUser1",
+                "userId": "defaultUser1",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                "shopId": "shop1",
+                // wrong shopName
+                "shopName": "undefined shop",
+                "timestamp": 1625011200000,
+                "employeeId": "employeeUser1",
+                "userId": "defaultUser1",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                "shopId": "shop1",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                // wrong employee id
+                "employeeId": "employeeUser2",
+                "userId": "defaultUser1",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                "shopId": "shop1",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                "employeeId": "employeeUser1",
+                // not a save userid string
+                "userId": "<script></script>",
+                "valueIncrement": 10,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+
+            await assertFails(firestoreEmployee.collection('transactions').doc("new transaction 2").set({
+                "shopId": "shop1",
+                "shopName": "Nights third leg syndrom",
+                "timestamp": 1625011200000,
+                "employeeId": "employeeUser1",
+                "userId": "defaultUser1",
+                // values don't add up
+                "valueIncrement": 11,
+                "oldAccountValue": 0,
+                "newAccountValue": 10
+            }));
+        });
+    });
 });
 
 

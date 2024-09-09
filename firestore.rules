@@ -52,14 +52,31 @@ service cloud.firestore {
     }
     
     match /logs/{id} {
+      allow create: if isEmployee();
       allow read, write: if isAdmin();
     }
 
     match /transactions/{id} {
-    	// user can read their own transactions and a valid employee can also read a users transactions
-      allow read: if resource.data.userId == request.auth.uid || isEmployee()
+      function validateFields(){
+          let data = request.resource.data;
+          let user = getUser();
 
-      allow create: if request.auth.uid in getEmployees(getUser().shopId);
+          return (
+              data.shopId == user.shopId &&
+              data.shopName == user.shopName &&
+              data.employeeId == request.auth.uid &&
+              data.oldAccountValue + data.valueIncrement == data.newAccountValue &&
+              get(/databases/$(database)/documents/users/$(data.userId)).data.name != null
+          )
+      }
+
+      allow read: if 
+        resource.data.userId == request.auth.uid || 
+        isEmployee() && resource.data.employeeId == request.auth.uid || 
+        isOwnerOfShop() && resource.data.shopId == getUser().shopId || 
+        isAdmin();
+      allow create: if 
+        isEmployee() && validateFields();
     }
 
     match /users/{id} {
