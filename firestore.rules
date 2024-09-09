@@ -38,10 +38,6 @@ service cloud.firestore {
       return !isSetAlready(key);
     }
 
-    // function goingToBeSet(key){
-    //   return key in request.resource.data.keys();
-    // }
-
     match /shops/{id} {
       function isShopOwner(){
         return request.auth.uid == resource.data.ownerId;
@@ -52,7 +48,7 @@ service cloud.firestore {
     }
     
     match /logs/{id} {
-      allow create: if isEmployee();
+      allow create: if isEmployee() || isAdmin();
       allow read, write: if isAdmin();
     }
 
