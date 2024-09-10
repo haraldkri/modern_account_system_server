@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
     "target": "ESNext",              // Output modern JavaScript that is as close as possible to the latest ECMAScript standard.
+    "module": "commonjs",            // Use CommonJS module system, which is required for Node.js applications.
     "noImplicitReturns": true,       // Ensure all functions have an explicit return statement in all code paths.
     "noUnusedLocals": true,          // Report errors on variables that are declared but never used, helping to keep the code clean.
     "strict": true,                  // Enable all strict type-checking options to catch more errors during compilation.
-    "esModuleInterop": true,         // Enable compatibility between CommonJS and ES Modules, making it easier to work with various libraries.
     "moduleResolution": "node",      // Use Node's module resolution algorithm
     "isolatedModules": true,         // Ensure that each file is treated as a separate module
-    "types": ["mocha"]        // Include types for Node.js and Mocha
+    "allowJs": true,
+    "types": ["node"],        // Include types for Node.js and Mocha
+    "allowSyntheticDefaultImports": true, // Allows to default-import CommonJS modules as if they were ES modules
+    "esModuleInterop": true,         // Enable compatibility between CommonJS and ES Modules, making it easier to work with various libraries.
   }
 }
