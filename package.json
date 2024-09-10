@@ -8,7 +8,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "emulators:start": "firebase emulators:start --only firestore",
-    "test:ci": "firebase emulators:exec --only firestore \"pnpm run test\""
+    "test:ci": "firebase emulators:exec --only firestore \"pnpm run test\"",
+    "deploy:firestore:rules": "firebase deploy --only firestore:rules"
   },
   "engines": {
     "node": "18.20.4 || 20.17.0 || >=22.8"
