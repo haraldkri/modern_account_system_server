@@ -31,7 +31,7 @@ jobs:
         run: pnpm install
 
       - name: Install Firebase CLI
-        run: pnpm setup && pnpm add -g firebase-tools
+        run: pnpm add firebase-tools
 
       - name: Start Firestore emulator
         run: pnpm run emulators:start
