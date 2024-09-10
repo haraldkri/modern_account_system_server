@@ -9,7 +9,7 @@ const TEST_FIREBASE_PROJECT_ID = 'test-firestore-rules-project-1';
 // Load Firestore rules
 function getFirestoreRules() {
   return fs.readFileSync(
-    path.resolve(__dirname, '../../../firestore.rules'),
+    path.resolve(__dirname, '../../firestore.rules'),
     'utf-8'
   );
 }
