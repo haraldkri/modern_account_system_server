@@ -10,6 +10,7 @@ import {
 import {assertFails, assertSucceeds, RulesTestEnvironment} from '@firebase/rules-unit-testing';
 import {testForInvalidTypes, testForValidTypes} from './setup/util';
 import {afterEach, beforeEach, describe, test} from "vitest";
+import {Shop} from "./setup/types";
 
 describe('firestore rules testing', () => {
     describe('users - get', () => {
@@ -332,7 +333,7 @@ describe('firestore rules testing', () => {
         });
 
         test('only a user itself or an admin can delete their account', async () => {
-            function createUser(){
+            function createUser() {
                 firestoreUser.collection('users').doc(defaultUser.uid).set({});
             }
 
@@ -532,6 +533,132 @@ describe('firestore rules testing', () => {
             await assertSucceeds(firestoreAdmin.collection('logs').doc("new log 3").set({...firestoreSeed.logs["log1"]}));
         });
     });
+
+    describe('shops', () => {
+        let testEnvironment: RulesTestEnvironment;
+
+        beforeEach(async () => {
+            testEnvironment = await setupFirestoreDB({insertDefaultData: true});
+        })
+
+        afterEach(async () => {
+            await testEnvironment.cleanup();
+        })
+
+        test("action - get", async () => {
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertFails(firestoreUser.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).get());
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertFails(firestoreEmployee.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).get());
+
+            const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
+            await assertSucceeds(firestoreShopOwner.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).get());
+
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertSucceeds(firestoreAdmin.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).get());
+        })
+
+        test("action - list", async () => {
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertFails(firestoreUser.collection('shops').get());
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertFails(firestoreEmployee.collection('shops').get());
+
+            const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
+            await assertFails(firestoreShopOwner.collection('shops').get());
+
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertSucceeds(firestoreAdmin.collection('shops').get());
+        })
+
+        test("action - create", async () => {
+            /**
+             * Because admins are expected to use the app without malicious intent, we reduce the check type tests etc. to a minimum,
+             * as it would not be worth the time (at the very least right now).
+             */
+
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertFails(firestoreUser.collection('shops').doc("new shop 1").set({...firestoreSeed.shops["shop1"]}));
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertFails(firestoreEmployee.collection('shops').doc("new shop 1").set({...firestoreSeed.shops["shop1"]}));
+
+            const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
+            await assertFails(firestoreShopOwner.collection('shops').doc("new shop 1").set({...firestoreSeed.shops["shop1"]}));
+
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertSucceeds(firestoreAdmin.collection('shops').doc("new shop 1").set({...firestoreSeed.shops["shop1"]}));
+        })
+
+        test("action - delete", async () => {
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertFails(firestoreUser.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).delete());
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertFails(firestoreEmployee.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).delete());
+
+            const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
+            await assertFails(firestoreShopOwner.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).delete());
+
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertSucceeds(firestoreAdmin.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).delete());
+        })
+
+        test("action - update - by user role", async () => {
+            const exampleUpdateData = {
+                employeeIds: ["shopOwnerUser1"]
+            } as Partial<Shop>;
+
+            const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
+            await assertFails(firestoreUser.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData));
+
+            const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
+            await assertFails(firestoreEmployee.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData));
+
+            const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
+            await assertSucceeds(firestoreShopOwner.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData));
+
+            const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
+            await assertFails(firestoreAdmin.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData));
+        })
+
+        test("action - update - restricted fields", async () => {
+            /**
+             * The following data can only be set once and never overridden
+             */
+            const nonUpdatableFields = [
+                {
+                    name: "All for one"
+                },
+                {
+                    key: "all-for-one"
+                },
+                {
+                    ownerId: "someUserUid"
+                },
+                {
+                    joined: 1234567890
+                },
+            ] as Array<Partial<Shop>>;
+
+            const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
+            const shopId = firestoreSeed.users[shopOwnerUser.uid].shopId!;
+
+            for (const value of nonUpdatableFields) {
+                await assertFails(firestoreShopOwner.collection('shops').doc(shopId).set(value, {merge: true}));
+            }
+
+            // Only one user can be added at the same time
+            await assertSucceeds(firestoreShopOwner.collection('shops').doc(shopId).set({employeeIds: [shopOwnerUser.uid]}, {merge: true}));
+            // The shop owner can not be removed from the employeeIds field
+            await assertFails(firestoreShopOwner.collection('shops').doc(shopId).set({employeeIds: []}, {merge: true}));
+
+            await assertSucceeds(firestoreShopOwner.collection('shops').doc(shopId).set({employeeIds: [shopOwnerUser.uid, defaultUser.uid]}, {merge: true}));
+            await assertSucceeds(firestoreShopOwner.collection('shops').doc(shopId).set({employeeIds: [shopOwnerUser.uid]}, {merge: true}));
+        })
+    })
 });
 
 

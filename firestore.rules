@@ -17,7 +17,8 @@ service cloud.firestore {
     }
     
     function isAdmin(){
-      return getUser().isAdmin;
+      let user = getUser();
+      return user != null && user.isAdmin != null && user.isAdmin;
     }
 
     function isOwnerOfShop(){
@@ -43,8 +44,26 @@ service cloud.firestore {
         return request.auth.uid == resource.data.ownerId;
       }
 
-      allow get, update: if isShopOwner();
-      allow read, write: if isAdmin();
+      function validateFields(){
+        return (
+          !request.resource.data
+          .diff(resource.data)
+          .affectedKeys()
+          .hasAny(['name', 'key', 'ownerId', 'joined']) && 
+          // shopOwner can not be deleted from the employeeIds
+          request.auth.uid in request.resource.data.employeeIds &&
+          // deleting employeeIds is allowed
+          // adding employeeIds is only allowed one at a time
+          (
+            resource.data.employeeIds.size() > request.resource.data.employeeIds.size() ||
+            resource.data.employeeIds.size() == request.resource.data.employeeIds.size() - 1         
+          )
+        );
+      }
+
+      allow get: if isShopOwner();
+      allow update: if isShopOwner() && validateFields();
+      allow read, create, delete: if isAdmin();
     }
     
     match /logs/{id} {
@@ -71,8 +90,7 @@ service cloud.firestore {
         isEmployee() && resource.data.employeeId == request.auth.uid || 
         isOwnerOfShop() && resource.data.shopId == getUser().shopId || 
         isAdmin();
-      allow create: if 
-        isEmployee() && validateFields();
+      allow create: if isEmployee() && validateFields();
     }
 
     match /users/{id} {
