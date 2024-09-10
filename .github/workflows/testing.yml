@@ -15,16 +15,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      firebase:
-        image: firebase/emulators
-        ports:
-          - 8080:8080
-          - 8085:8085
-        options: --entrypoint sh
-        volumes:
-          - .:/app
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -41,12 +31,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Set up Firestore emulator
+      - name: Install Firebase CLI
         run: |
           sudo pnpm add -g firebase-tools
 
       - name: Start Firestore emulator
-        run: pnpm run emulators:start
+        run: |
+          firebase emulators:start --only firestore --project demo --import=./emulator_data --export-on-exit=./emulator_data &
+        env:
+          FIRESTORE_EMULATOR_HOST: 'localhost:8080'
+
+      - name: Wait for Firestore emulator to start
+        run: sleep 5
 
       - name: Run Unit Tests
         run: pnpm run test
