@@ -5,8 +5,8 @@
   "main": "src/index.test.ts",
   "type": "module",
   "scripts": {
-    "test": "ts-mocha --exit src/**/*.test.ts",
-    "test:watch": "ts-mocha --exit src/**/*.test.ts -w --watch-files 'src/**/*.ts'",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "emulators:start": "firebase emulators:start --only firestore"
   },
   "engines": {
