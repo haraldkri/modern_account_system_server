@@ -1,0 +1,52 @@
+name: Run Unit Tests
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - testing
+  pull_request:
+    branches:
+      - develop
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      firebase:
+        image: firebase/emulators
+        ports:
+          - 8080:8080
+          - 8085:8085
+        options: --entrypoint sh
+        volumes:
+          - .:/app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.17.0'
+
+      - name: Install pnpm
+        run: |
+          npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Set up Firestore emulator
+        run: |
+          sudo pnpm add -g firebase-tools
+
+      - name: Start Firestore emulator
+        run: pnpm run emulators:start
+
+      - name: Run Unit Tests
+        run: pnpm run test
