@@ -612,16 +612,16 @@ describe('firestore rules testing', () => {
             } as Partial<Shop>;
 
             const firestoreUser = testEnvironment.authenticatedContext(defaultUser.uid).firestore();
-            await assertFails(firestoreUser.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData));
+            await assertFails(firestoreUser.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData, {merge: true}));
 
             const firestoreEmployee = testEnvironment.authenticatedContext(employeeUser.uid).firestore();
-            await assertFails(firestoreEmployee.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData));
+            await assertFails(firestoreEmployee.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData, {merge: true}));
 
             const firestoreShopOwner = testEnvironment.authenticatedContext(shopOwnerUser.uid).firestore();
-            await assertSucceeds(firestoreShopOwner.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData));
+            await assertSucceeds(firestoreShopOwner.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData, {merge: true}));
 
             const firestoreAdmin = testEnvironment.authenticatedContext(adminUser.uid).firestore();
-            await assertFails(firestoreAdmin.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData));
+            await assertFails(firestoreAdmin.collection('shops').doc(firestoreSeed.users[shopOwnerUser.uid].shopId!).set(exampleUpdateData, {merge: true}));
         })
 
         test("action - update - restricted fields", async () => {
