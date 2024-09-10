@@ -31,13 +31,10 @@ jobs:
         run: pnpm install
 
       - name: Install Firebase CLI
-        run: pnpm add -g firebase-tools
+        run: pnpm setup && pnpm add -g firebase-tools
 
       - name: Start Firestore emulator
-        run: |
-          firebase emulators:start --only firestore --project demo --import=./emulator_data --export-on-exit=./emulator_data &
-        env:
-          FIRESTORE_EMULATOR_HOST: 'localhost:8080'
+        run: pnpm run emulators:start
 
       - name: Wait for Firestore emulator to start
         run: sleep 5
