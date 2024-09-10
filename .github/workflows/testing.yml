@@ -25,15 +25,13 @@ jobs:
           node-version: '20.17.0'
 
       - name: Install pnpm
-        run: |
-          npm install -g pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install
 
       - name: Install Firebase CLI
-        run: |
-          sudo pnpm add -g firebase-tools
+        run: pnpm add -g firebase-tools
 
       - name: Start Firestore emulator
         run: |
