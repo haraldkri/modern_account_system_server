@@ -33,11 +33,5 @@ jobs:
       - name: Install Firebase CLI
         run: pnpm add firebase-tools
 
-      - name: Start Firestore emulator
-        run: pnpm run emulators:start
-
-      - name: Wait for Firestore emulator to start
-        run: sleep 5
-
       - name: Run Unit Tests
-        run: pnpm run test
+        run: pnpm run test:ci
