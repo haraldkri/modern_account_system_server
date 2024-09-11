@@ -125,11 +125,5 @@ export const firestoreSeed: MyFirestore = {
             employeeId: "employeeUser1",
             newEmployeeIds: ["shopOwnerUser1", "employeeUser1"],
         } as AddEmployeeLog,
-    },
-    //todo this one should be able to be removed by just securing the user document write enough
-    service: {
-        admins: {
-            adminUserIds: ["adminUser1"]
-        }
     }
 };
