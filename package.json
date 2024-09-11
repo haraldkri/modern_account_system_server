@@ -10,7 +10,7 @@
     "emulators:start": "firebase emulators:start --only firestore",
     "emulators:start:with:data": "firebase emulators:start --only firestore --import=\"emulator-data\"",
     "load:seed:to:emulator": "firebase emulators:exec --only firestore --import=\"emulator-data\" --export-on-exit=\"emulator-data\" \"node ./src/load-seed-to-emulator.js\"",
-    "test:ci": "firebase emulators:exec --only firestore --export-on-exit \"pnpm run test\"",
+    "test:ci": "firebase emulators:exec --only firestore \"pnpm run test\"",
     "deploy:firestore:rules": "firebase deploy --only firestore:rules"
   },
   "engines": {
